@@ -1,4 +1,7 @@
 import React, { useState } from "react";
+import Toast from "../UIElements/Toast";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 function Signup() {
   const [name, setName] = useState();
@@ -7,9 +10,78 @@ function Signup() {
   const [password, setPassword] = useState();
   const [pic, setPic] = useState();
   const [picLoading, setPicLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-  const postDetails = () => {};
-  const submitHandler = () => {};
+  const postDetails = () => {
+    setLoading(true);
+    if (pic === undefined) {
+      <Toast title="Please select an image" />;
+      return;
+    }
+    if (pic.type === "image/jpeg" || pic.type === "image/png") {
+      const data = new FormData();
+      data.append("file", pic);
+      data.append("upload_preset", "Sampark");
+      data.append("cloud_name", "danzbpzgo");
+      fetch("https://res.cloudinary.com/danzbpzgo/image/upload", {
+        method: "post",
+        body: data,
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          setPic(data.url.toString());
+          setLoading(false);
+        })
+        .catch((err) => {
+          console.log(err);
+          setLoading(false);
+        });
+    } else {
+      <Toast title="Please select an image" />;
+      setLoading(false);
+      return;
+    }
+  };
+  const submitHandler = async () => {
+    setLoading(true);
+    if (!name || !email || !password || !confirmpassword) {
+      <Toast title="Please Fill all the Fields" />;
+      setLoading(false);
+      return;
+    }
+
+    if (password !== confirmpassword) {
+      <Toast title="Passwords do not match" />;
+      return;
+    }
+
+    try {
+      const config = {
+        headers: {
+          "Content-type": "application/json",
+        },
+      };
+      const { data } = await axios.post(
+        "/api/user",
+        {
+          name,
+          email,
+          password,
+          pic,
+        },
+        config
+      );
+      console.log(data);
+      <Toast title="Registration Successful" />;
+      localStorage.setItem("userInfo", JSON.stringify(data));
+      setPicLoading(false);
+      navigate("/chats");
+    } catch (error) {
+      <Toast title="Error Occured!" />;
+      setLoading(false);
+    }
+  };
   return (
     <>
       <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
@@ -25,7 +97,7 @@ function Signup() {
         </div>
 
         <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-          <form className="space-y-6" action="#" method="POST">
+          <form className="space-y-6" method="POST">
             <div>
               <label
                 htmlFor="name"
